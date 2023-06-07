@@ -1,7 +1,7 @@
 package pipelines
 
 import (
-	"github.com/Onboardbase/pipemuta/pkg/utils"
+	"github.com/Onboardbase/pipeline/pkg/utils"
 )
 
 func NewGitlabConfig(pmutaPipeline *PipemutaPipeline) *GitlabConfig {

@@ -1,4 +1,4 @@
-module github.com/Onboardbase/pipemuta
+module github.com/Onboardbase/pipeline
 
 go 1.20
 

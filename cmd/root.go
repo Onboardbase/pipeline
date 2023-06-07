@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Onboardbase/pipemuta/pkg/pipemuta"
-	"github.com/Onboardbase/pipemuta/pkg/utils"
+	"github.com/Onboardbase/pipeline/pkg/pipemuta"
+	"github.com/Onboardbase/pipeline/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

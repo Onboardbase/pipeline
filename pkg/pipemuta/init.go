@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Onboardbase/pipemuta/pkg/pipelines"
-	"github.com/Onboardbase/pipemuta/pkg/utils"
+	"github.com/Onboardbase/pipeline/pkg/pipelines"
+	"github.com/Onboardbase/pipeline/pkg/utils"
 )
 
 type SUPPORTED_PIPELINE = string
