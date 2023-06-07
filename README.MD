@@ -1,5 +1,5 @@
 
-# PipeMuta
+# Pipeline 
 
 A Pipeline configuration tool that generates pipeline configuration from a base configuration file.
 
@@ -25,7 +25,7 @@ Have a pipemuta yaml file that follows the Pipemuta configuration pattern
 Then run:
 ---
 ```
-pipemuta -i base.yaml -o gitlab-ci.yml -t gitlab
+pipeline -i base.yaml -o gitlab-ci.yml -t gitlab
 ```
 ---
 
