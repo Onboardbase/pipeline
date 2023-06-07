@@ -19,7 +19,7 @@ func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }
 
-func initializePipeMuta(cmd *cobra.Command, args []string) {
+func initializePipeMuta(cmd *cobra.Command, _ []string) {
 	outfile := cmd.Flag("output").Value.String()
 	if outfile == "" {
 		utils.ErrExit(fmt.Errorf("output file is required"), 1)

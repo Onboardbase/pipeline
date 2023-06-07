@@ -20,9 +20,14 @@ clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_UNIX)
+	rm -rf dist
 
 run: build
 	./$(BINARY_NAME)
+
+
+release:
+	goreleaser release --snapshot --clean
 
 fmt:
 	$(GOFMT) -w .
