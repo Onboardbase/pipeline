@@ -72,31 +72,31 @@ func initPipelineType(source SUPPORTED_PIPELINE, pconf *pipelines.PipemutaPipeli
 // Transmute this is the source file that initializes the process
 func (pmuta *PipeMuta) Transmute() {
 	// convert the input to struct
-	pconf, err := pmuta.UnMarshalInputfile()
-	if err != nil {
-		utils.ErrExit(fmt.Errorf("unable to parse input configuration: %s", err.Error()), 1)
-	}
+	// pconf, err := pmuta.UnMarshalInputfile()
+	// if err != nil {
+	// 	utils.ErrExit(fmt.Errorf("unable to parse input configuration: %s", err.Error()), 1)
+	// }
 
-	destConfig := initPipelineType(pmuta.Configtype, pconf)
-	if destConfig == nil {
-		utils.ErrExit(fmt.Errorf("unable to generate the configuration for %s destination CI/CD", pmuta.Configtype), 1)
-	}
+	// destConfig := initPipelineType(pmuta.Configtype, pconf)
+	// if destConfig == nil {
+	// 	utils.ErrExit(fmt.Errorf("unable to generate the configuration for %s destination CI/CD", pmuta.Configtype), 1)
+	// }
 
-	for _, fschema := range destConfig.GenerateSchema() {
-		// extract the required struct to the destination config
-		outbyte, err := pmuta.MarshalOutput(fschema)
-		if err != nil {
-			utils.ErrExit(fmt.Errorf("unable to generate the configuration for %s destination CI/CD", pmuta.Configtype), 1)
-		}
-		err = createOutputPath(pmuta.OutputPath)
-		if err != nil {
-			utils.ErrExit(fmt.Errorf("unable to create output path: %s", pmuta.OutputPath), 1)
-		}
-		err = os.WriteFile(pmuta.OutputPath, outbyte, 0644)
-		if err != nil {
-			utils.ErrExit(fmt.Errorf("can not create file to output path %s", pmuta.OutputPath), 1)
-		}
-	}
+	// for _, fschema := range destConfig.GenerateSchema() {
+	// 	// extract the required struct to the destination config
+	// 	outbyte, err := pmuta.MarshalOutput(fschema)
+	// 	if err != nil {
+	// 		utils.ErrExit(fmt.Errorf("unable to generate the configuration for %s destination CI/CD", pmuta.Configtype), 1)
+	// 	}
+	// 	err = createOutputPath(pmuta.OutputPath)
+	// 	if err != nil {
+	// 		utils.ErrExit(fmt.Errorf("unable to create output path: %s", pmuta.OutputPath), 1)
+	// 	}
+	// 	err = os.WriteFile(pmuta.OutputPath, outbyte, 0644)
+	// 	if err != nil {
+	// 		utils.ErrExit(fmt.Errorf("can not create file to output path %s", pmuta.OutputPath), 1)
+	// 	}
+	// }
 }
 
 func createOutputPath(outputPath string) (err error) {
