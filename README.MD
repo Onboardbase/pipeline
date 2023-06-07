@@ -10,8 +10,14 @@ E.g moving from Gitlab to Github should be a breeze, and vice versa without worr
 
 
 ## Development
+
+```bash
 $ git clone git@github.com:Onboardbase/pipeline.git
+```
+
+```bash
 $ make dev
+```
 
 ## Usage
 Have a pipemuta yaml file that follows the Pipemuta configuration pattern
