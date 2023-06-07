@@ -28,4 +28,5 @@ fmt:
 	$(GOFMT) -w .
 
 dev:
+	go get github.com/githubnemo/CompileDaemon && go install github.com/githubnemo/CompileDaemon
 	CompileDaemon -build="$(GOBUILD) -o ./$(BINARY_NAME)" -command="./$(BINARY_NAME) -i ./example/pipemuta.yml -t github -o ./example/.github/workflows/github.yaml" -color="true" -exclude-dir=.git -exclude=".#*" -polling -polling-interval 500

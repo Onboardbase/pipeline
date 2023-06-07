@@ -9,13 +9,18 @@ E.g moving from Gitlab to Github should be a breeze, and vice versa without worr
 
 
 
+## Development
+
+
 ## Usage
 Have a pipemuta yaml file that follows the Pipemuta configuration pattern
 
 Then run:
+---
 ```
 pipemuta -i base.yaml -o gitlab-ci.yml -t gitlab
 ```
+---
 
 The -i option tells where the base configuration is, the -o specifies the name of the output file, and the -t specifies what type of configuration should be generated.
 
