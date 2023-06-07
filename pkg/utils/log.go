@@ -7,6 +7,7 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
+// ErrExit Logs an error then exit the process
 func ErrExit(err error, exitCode int, messages ...string) {
 	if len(messages) > 0 && messages[0] != "" {
 		fmt.Fprintln(os.Stderr, messages[0])
@@ -21,10 +22,12 @@ func ErrExit(err error, exitCode int, messages ...string) {
 	}
 	os.Exit(exitCode)
 }
+
+// LogError Logs an error to the console through the stdErrr
 func LogError(err error) {
 	printError(err)
 }
 
 func printError(e error) {
-	fmt.Fprintln(os.Stderr, color.Red.Render("CLI Tools Error:"), e)
+	fmt.Fprintln(os.Stderr, color.Red.Render("Pipemuta Error:"), e)
 }

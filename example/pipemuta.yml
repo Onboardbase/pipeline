@@ -1,0 +1,446 @@
+name: "This is the name of the pipeline config"
+
+defaults:
+  gl:
+    # Gitlab
+    before_script:
+      - echo Hello World
+      - echo Goodbye World
+    after_script:
+      - echo Hello World
+      - echo Goodbye World
+    
+    artifacts:
+      paths:
+        - binaries
+        - names
+    cache:
+      key: unique id for the cache
+      paths:
+        - binaries/*.apk
+        - .config
+    hooks:
+      name_of_the_hook:
+        - scripts to run for the hook
+    image: ruby:3.0
+    interruptible: true # if a job can be stopped
+    retry: 2 # the amount of times to retry a failed job
+
+    services:
+      - name: my-postgres:11.7
+        alias: db-postgres
+        entrypoint: ["/usr/local/bin/db-postgres"]
+        command: ["start"]
+    
+    tags: # only runners with this tag would run
+      - ruby
+      - postgres
+    
+    timeout: 3h 30m
+    # include: '/templates/.gitlab-ci-template.yml'
+    # include:
+    #   - local: '/templates/.gitlab-ci-template.yml'
+    # include:
+    #   - remote: 'https://gitlab.com/example-project/-/raw/main/.gitlab-ci.yml'
+    include:
+      - project: 'my-group/my-project'
+        file: '/templates/.gitlab-ci-template.yml'
+      - project: 'my-group/my-subgroup/my-project-2'
+        file:
+          - '/templates/.builds.yml'
+          - '/templates/.tests.yml'
+      - project: 'my-group/my-project'
+        ref: main                                      # Git branch
+        file: '/templates/.gitlab-ci-template.yml'
+      - project: 'my-group/my-project'
+        ref: v1.0.0                                    # Git Tag
+        file: '/templates/.gitlab-ci-template.yml'
+      - project: 'my-group/my-project'
+        ref: 787123b47f14b552955ca2786bc9542ae66fee5b  # Git SHA
+        file: '/templates/.gitlab-ci-template.yml'
+  gh:
+    # Github
+    run:
+      shell: bash
+      working-directory: scripts
+  env:
+    SERVER: production
+
+
+jobs: # job_template on gitlab
+  build_and_deploy:
+    gh:
+      services:
+        nginx:
+          env:
+            NODE_ENV: development
+          volumes:
+            - my_docker_volume:/volume_mount
+          options: --cpus 1
+          image: nginx
+          # Map port 8080 on the Docker host to port 80 on the nginx container
+          ports:
+            - 8080:80
+          credentials:
+            username: ${{ github.actor }}
+            password: ${{ secrets.github_token }}
+        redis:
+          image: redis
+          # Map TCP port 6379 on Docker host to a random free port on the Redis container
+          ports:
+            - 6379/tcp
+
+      container:
+        image: node:14.16
+        env:
+          NODE_ENV: development
+        ports:
+          - 80
+        volumes:
+          - my_docker_volume:/volume_mount
+        options: --cpus 1
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.github_token }}
+      fail-fast: true
+      continue-on-error: true
+      max-parallel: 2
+      if: github.repository == 'octo-org/octo-repo-prod'
+      name: My second job
+      environment:
+          name: production_environment
+          url: ${{ steps.step_id.outputs.url_output }}
+      # environment: staging_environment
+      # runs-on: ubuntu-latest|windows-latest|windows-2022|windows-2019|ubuntu-22.04|macos-13|macos-13-xl|macos-latest|macos-12|macos-latest-xl|macos-12-xl|macos-11
+      runs-on:
+        group: ubuntu-runners
+        labels: ubuntu-20.04-16core
+      
+      outputs:
+        output1: ${{ steps.step1.outputs.test }}
+        output2: ${{ steps.step2.outputs.test }}
+      
+      env:
+        FIRST_NAME: Mona
+      
+      defaults:
+        run:
+          shell: bash
+          working-directory: scripts
+      
+      # needs: my_first_job
+      needs:
+        - my_first_job
+      timeout-minutes: 23
+      # concurrency: staging_environment
+      concurrency:
+        group: ${{ github.ref }}
+        cancel-in-progress: true
+
+      strategy:
+        matrix:
+          version: [10, 12, 14]
+          os: [ubuntu-latest, windows-latest]
+          include:
+            - os: windows-latest
+              node: 16
+              npm: 6
+          exclude:
+            - os: macos-latest
+              version: 12
+              environment: production
+            - os: windows-latest
+              version: 16
+      # permissions: {} # also means disable
+      # permissions: read-all|write-all
+      permissions:
+        actions: read|write|none
+        checks: read|write|none
+        contents: read|write|none
+        deployments: read|write|none
+        id-token: read|write|none
+        issues: read|write|none
+        pages: read|write|none
+        discussions: read|write|none
+        packages: read|write|none
+        pull-requests: read|write|none
+        repository-projects: read|write|none
+        security-events: read|write|none
+        statuses: read|write|none
+      steps:
+        - name: Clean install dependencies and build
+          continue-on-error: true
+          timeout-minutes: 23
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            FIRST_NAME: Mona
+            LAST_NAME: Octocat
+          run: |
+            npm ci
+            npm run build
+          id: some_string
+          working-directory: ./temp
+          shell: bash # bash, pwsh, python, sh, cmd, powershell or a custom string with {0} e.g perl {0}
+          if: ${{ env.super_secret != '' }}
+        - name: Check out repository
+          uses: actions/checkout@v3
+          with:
+            repository: octocat/my-private-repo
+            ref: v1.0
+            token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+            path: ./.github/actions/my-private-repo
+            args: The ${{ github.event_name }} event triggered this step.
+        - name: Use local my-action
+          uses: ./.github/actions/my-action
+
+    gl:
+      parallel: 5
+      allow_failure: true
+      # allow_failure:
+      #   exit_codes:
+      #     - 137
+      #     - 255
+      # allow_failure:
+      #   exit_codes: 137
+      after_script:
+        - some commands to run overriding the global after script
+      scripts:
+        - script_a
+        - script_b
+        - script_c
+      before_script:
+        - echo "Execute this command before any 'script:' commands."
+      artifacts:
+        paths:
+          - binaries/
+          - .config
+        exclude:
+          - binaries/**/*.o
+        expire_in: 1 week
+        expose_as: 'artifact_1'
+        name: artifact_name
+        public: false
+        reports:
+          junit: rspec.xml
+        untracked: true
+        when: on_failure # on_failure, on_success, always 
+      cache:
+        # key: binaries-cache
+        key:
+          files:
+            - Gemfile.lock
+          prefix: $CI_JOB_NAME
+        untracked: true
+        unprotect: true
+        when: 'always'
+        policy: pull
+        paths:
+          - binaries/*.apk
+          - .config
+        fallback_keys:
+          - gems
+      coverage: '/Code coverage: \d+\.\d+/'
+      script: make test:linux
+      dependencies:
+        - build_linux
+      # environment: production
+      environment:
+        name: production
+        url: https://prod.example.com
+        action: stop # start prepare stop verify access
+        auto_stop_in: 1 day
+        kubernetes:
+          namespace: production
+        deployment_tier: production
+        extends: .test
+      hooks:
+        pre_get_sources_script:
+          - echo 'hello job1 pre_get_sources_script'
+      id_tokens:
+        ID_TOKEN_1:
+          aud: 
+            - https://gitlab.com
+        ID_TOKEN_2:
+          aud:
+            - https://gcp.com
+            - https://aws.com
+      # image: ruby:3.0
+      image:
+        name: "registry.example.com/my/image:latest"
+        entrypoint: [""]
+        # pull_policy: if-not-present
+        pull_policy: [always, if-not-present]
+      # inherit: true
+      inherit:
+        variables: false
+      interruptible: true
+      release:
+        tag_name: $CI_COMMIT_TAG
+        name: 'Release $CI_COMMIT_TAG'
+        description: 'Release created using the release-cli.'
+        tag_message: 'Annotated tag message'
+        released_at: '2021-03-15T08:00:00Z'
+        milestones:
+        ref: $CI_COMMIT_BRANCH
+        assets:
+          links:
+            - name: 'asset1'
+              url: 'https://example.com/assets/1'
+            - name: 'asset2'
+              url: 'https://example.com/assets/2'
+              filepath: '/pretty/url/1' # optional
+              link_type: 'other' # optional
+      resource_group: production
+      # needs: ['build-dev']
+      rules:
+        - allow_failure: true
+        - exists:
+            - Dockerfile
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          needs: ['build-dev']
+          changes:
+            # - Dockerfile
+            paths:
+              - Dockerfile
+            compare_to: 'refs/heads/branch1'
+          when: manual
+          allow_failure: true
+      secrets:
+        DATABASE_PASSWORD:  # Store the path to the secret in this CI/CD variable
+          file: false
+          token: $VAULT_TOKEN
+          # vault: production/db/password
+          vault:  # Translates to secret: `ops/data/production/db`, field: `password`
+            engine:
+              name: kv-v2
+              path: ops
+            path: production/db
+            field: password
+      tags:
+        - ruby
+        - postgres
+      timeout: 3h 30m
+      # trigger: my-group/my-project
+      trigger:
+        include: path/to/child-pipeline.gitlab-ci.yml
+        project: my-group/my-project
+        branch: development
+        strategy: depend
+        forward:
+          pipeline_variables: true
+          yaml_variables: false
+      when: manual # on_success on_failure never always manual delayed
+      variables:
+        REVIEW_PATH: 
+          value: "/review"
+        DEPLOY_ENVIRONMENT:
+          options:
+            - "production"
+            - "staging"
+            - "canary"
+          expand: false
+          value: "staging"
+          description: "The deployment target. Change this variable to 'canary' or 'production' if needed."
+      services:
+        - name: my-postgres:11.7
+          # pull_policy: if-not-present
+          pull_policy: [always, if-not-present]
+          alias: db-postgres
+          entrypoint: ["/usr/local/bin/db-postgres"]
+          command: ["start"]
+      # retry: 2
+      retry:
+        max: 2
+        # when: runner_system_failure
+        when:
+          - runner_system_failure
+          - stuck_or_timeout_failure
+          - always
+          - unknown_failure
+          - script_failure
+          - api_failure
+          - stuck_or_timeout_failure
+          - runner_system_failure
+          - runner_unsupported
+          - stale_schedule
+          - job_execution_timeout
+          - archived_failure
+          - unmet_prerequisites
+          - scheduler_failure
+          - data_integrity_failure
+      # needs: ["mac:build"]
+      needs:
+
+        - pipeline: other/project
+        - job: build_job2
+          artifacts: false
+        - project: namespace/group/project-name
+          job: build-1
+          ref: main
+          artifacts: true
+        - project: namespace/group/project-name-2
+          job: build-2
+          ref: main
+          artifacts: true
+          optional: true
+      
+
+workflows: # jobs on gitlab 
+  - name: github_workflow
+    description: This is a sample workflow
+    gl:
+      except:
+        - main
+        - /^stable-branch.*$/
+        - schedules
+      only: # gitlab
+        refs:
+          - main
+          - schedules
+        variables:
+          - $CI_COMMIT_MESSAGE =~ /run-end-to-end-tests/
+        kubernetes: active
+        changes:
+          - Dockerfile
+          - service-one/**/*
+      rules: # only gitlab
+      - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+        variables:
+          DEPLOY_VARIABLE: "deploy-production"  # Override globally-defined DEPLOY_VARIABLE
+      - if: $CI_COMMIT_REF_NAME =~ /feature/
+        variables:
+          IS_A_FEATURE: "true"                  # Define a new variable.
+      - when: always           # always or never                 # Run the pipeline in other cases
+    gh:
+      on: # github
+        pull_request_comment:
+          types: [submitted, edited, dismissed]
+      
+      except: # gitlab
+        - main
+        - /^stable-branch.*$/
+        - schedules
+      # concurrency: staging_environment
+      concurrency: #github
+        group: ${{ github.ref }}
+        cancel-in-progress: true
+      # permissions: read-all|write-all
+      permissions: #github
+        actions: read|write|none
+        checks: read|write|none
+        contents: read|write|none
+        deployments: read|write|none
+        id-token: read|write|none
+        issues: read|write|none
+        discussions: read|write|none
+        packages: read|write|none
+        pages: read|write|none
+        pull-requests: read|write|none
+        repository-projects: read|write|none
+        security-events: read|write|none
+        statuses: read|write|none
+    env:
+      HELLO: HI
+    stages:
+      - build_and_deploy
+      

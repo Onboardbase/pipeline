@@ -3,11 +3,10 @@ package pipemuta
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/Onboardbase/pipemuta/pkg/pipelines"
-	"github.com/Onboardbase/pipemuta/pkg/pipelines/github"
-	"github.com/Onboardbase/pipemuta/pkg/pipelines/gitlab"
 	"github.com/Onboardbase/pipemuta/pkg/utils"
 )
 
@@ -22,26 +21,21 @@ var SUPPORTED_PIPELINES = []SUPPORTED_PIPELINE{
 }
 
 type PipeMuta struct {
-	Source              SUPPORTED_PIPELINE
-	Destination         SUPPORTED_PIPELINE
-	FilePath            string
-	SourcePipeline      pipelines.Pipeline
-	DestinationPipeline pipelines.Pipeline
+	Configtype SUPPORTED_PIPELINE
+	ConfigPath string
+	OutputPath string
 }
 
 // NewPipeMuta generates a new instance of pipemuta
-func NewPipeMuta(source string, dest string, filePath string) *PipeMuta {
+func NewPipeMuta(inputPath string, outputPath string, configtype string) *PipeMuta {
 	pmuta := &PipeMuta{
-		Source:      strings.ToLower(source),
-		Destination: strings.ToLower(dest),
-		FilePath:    filePath,
+		// Source:      strings.ToLower(source),
+		Configtype: strings.ToLower(configtype),
+		ConfigPath: inputPath,
+		OutputPath: outputPath,
 	}
 	pmuta.Validate()
 	return pmuta
-}
-
-func validate_source(source SUPPORTED_PIPELINE) bool {
-	return utils.Slice_contains(SUPPORTED_PIPELINES, source)
 }
 
 func validate_destination(dest SUPPORTED_PIPELINE) bool {
@@ -54,49 +48,62 @@ func validate_file_path(fp string) bool {
 }
 
 func (pmuta *PipeMuta) Validate() {
-	// Ensures that the source is valid
-	if !validate_source(pmuta.Source) {
-		utils.ErrExit(fmt.Errorf("source is not one of supported configurations"), 1)
-	}
-
 	// Ensures that the destination is correct
-	if !validate_destination(pmuta.Destination) {
+	if !validate_destination(pmuta.Configtype) {
 		utils.ErrExit(fmt.Errorf("destination is not one of supported configurations"), 1)
 	}
 
-	// ensures that both source can not be transformed to the same destination, e.g github to github - does not make sense at all
-	if pmuta.Destination == pmuta.Source {
-		utils.ErrExit(fmt.Errorf("destination and source can not be the same "), 1)
-	}
-
 	// ensures that the path is also valid
-	if !validate_file_path(pmuta.FilePath) {
-		utils.ErrExit(fmt.Errorf("the file containing %s CI configuration can not be found", pmuta.Source), 1)
+	if !validate_file_path(pmuta.ConfigPath) {
+		utils.ErrExit(fmt.Errorf("pipemuta configuration %s can not be found", pmuta.ConfigPath), 1)
 	}
 }
 
-func initPipelineType(source SUPPORTED_PIPELINE) pipelines.Pipeline {
+func initPipelineType(source SUPPORTED_PIPELINE, pconf *pipelines.PipemutaPipeline) pipelines.PipelineConfig {
 	switch source {
 	case GITLAB:
-		return &gitlab.GitlabPipeline{}
+		return pipelines.NewGitlabConfig(pconf)
 	case GITHUB:
-		return &github.GithubPipeline{}
+		return pipelines.NewGithubConfig(pconf)
 	}
 	return nil
 }
 
 // Transmute this is the source file that initializes the process
 func (pmuta *PipeMuta) Transmute() {
-	// validate the source configuration with a preset yaml configuration
+	// convert the input to struct
+	pconf, err := pmuta.UnMarshalInputfile()
+	if err != nil {
+		utils.ErrExit(fmt.Errorf("unable to parse input configuration: %s", err.Error()), 1)
+	}
 
-	source := initPipelineType(pmuta.Source)
-	if source == nil {
-		utils.ErrExit(fmt.Errorf("unable to initialize the configuration for %s source pipeline", pmuta.Source), 1)
+	destConfig := initPipelineType(pmuta.Configtype, pconf)
+	if destConfig == nil {
+		utils.ErrExit(fmt.Errorf("unable to generate the configuration for %s destination CI/CD", pmuta.Configtype), 1)
 	}
-	destination := initPipelineType(pmuta.Destination)
-	if destination == nil {
-		utils.ErrExit(fmt.Errorf("unable to initialize the configuration for %s destination pipeline", pmuta.Source), 1)
+
+	for _, fschema := range destConfig.GenerateSchema() {
+		// extract the required struct to the destination config
+		outbyte, err := pmuta.MarshalOutput(fschema)
+		if err != nil {
+			utils.ErrExit(fmt.Errorf("unable to generate the configuration for %s destination CI/CD", pmuta.Configtype), 1)
+		}
+		err = createOutputPath(pmuta.OutputPath)
+		if err != nil {
+			utils.ErrExit(fmt.Errorf("unable to create output path: %s", pmuta.OutputPath), 1)
+		}
+		err = os.WriteFile(pmuta.OutputPath, outbyte, 0644)
+		if err != nil {
+			utils.ErrExit(fmt.Errorf("can not create file to output path %s", pmuta.OutputPath), 1)
+		}
 	}
-	pmuta.DestinationPipeline = destination
-	pmuta.SourcePipeline = source
+}
+
+func createOutputPath(outputPath string) (err error) {
+	outfilename := path.Base(outputPath)
+	pathtofile := strings.Replace(outputPath, outfilename, "", -1)
+	if !validate_file_path(pathtofile) {
+		err = os.MkdirAll(pathtofile, os.ModePerm)
+	}
+	return err
 }

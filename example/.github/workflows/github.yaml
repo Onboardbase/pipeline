@@ -1,0 +1,146 @@
+name: This is the name of the pipeline config
+run-name: github_workflow
+permissions:
+    actions: read|write|none
+    checks: read|write|none
+    contents: read|write|none
+    deployments: read|write|none
+    discussions: read|write|none
+    id-token: read|write|none
+    issues: read|write|none
+    packages: read|write|none
+    pages: read|write|none
+    pull-requests: read|write|none
+    repository-projects: read|write|none
+    security-events: read|write|none
+    statuses: read|write|none
+env:
+    HELLO: HI
+defaults:
+    run:
+        shell: bash
+        working-directory: scripts
+concurrency:
+    group: ${{ github.ref }}
+    cancel-in-progress: true
+"on":
+    pull_request_comment:
+        types:
+            - submitted
+            - edited
+            - dismissed
+jobs:
+    build_and_deploy:
+        name: My second job
+        services:
+            nginx:
+                env:
+                    NODE_ENV: development
+                volumes:
+                    - my_docker_volume:/volume_mount
+                options: --cpus 1
+                image: nginx
+                ports:
+                    - 8080:80
+                credentials:
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.github_token }}
+            redis:
+                image: redis
+                ports:
+                    - 6379/tcp
+        container:
+            env:
+                NODE_ENV: development
+            volumes:
+                - my_docker_volume:/volume_mount
+            options: --cpus 1
+            image: node:14.16
+            ports:
+                - "80"
+            credentials:
+                username: ${{ github.actor }}
+                password: ${{ secrets.github_token }}
+        fail-fast: true
+        continue-on-error: true
+        max-parallel: 2
+        if: github.repository == 'octo-org/octo-repo-prod'
+        environment:
+            name: production_environment
+            url: ${{ steps.step_id.outputs.url_output }}
+        runs-on:
+            group: ubuntu-runners
+            labels: ubuntu-20.04-16core
+        outputs:
+            output1: ${{ steps.step1.outputs.test }}
+            output2: ${{ steps.step2.outputs.test }}
+        env:
+            FIRST_NAME: Mona
+        defaults:
+            run:
+                shell: bash
+                working-directory: scripts
+        needs:
+            - my_first_job
+        timeout-minutes: 23
+        concurrency:
+            cancel-in-progress: true
+            group: ${{ github.ref }}
+        strategy:
+            matrix:
+                exclude:
+                    - environment: production
+                      os: macos-latest
+                      version: 12
+                    - os: windows-latest
+                      version: 16
+                include:
+                    - node: 16
+                      npm: 6
+                      os: windows-latest
+                os:
+                    - ubuntu-latest
+                    - windows-latest
+                version:
+                    - 10
+                    - 12
+                    - 14
+        permissions:
+            actions: read|write|none
+            checks: read|write|none
+            contents: read|write|none
+            deployments: read|write|none
+            discussions: read|write|none
+            id-token: read|write|none
+            issues: read|write|none
+            packages: read|write|none
+            pages: read|write|none
+            pull-requests: read|write|none
+            repository-projects: read|write|none
+            security-events: read|write|none
+            statuses: read|write|none
+        steps:
+            - name: Clean install dependencies and build
+              continue-on-error: true
+              timeout-minutes: 23
+              env:
+                FIRST_NAME: Mona
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                LAST_NAME: Octocat
+              run: |
+                npm ci
+                npm run build
+              id: some_string
+              working-directory: ./temp
+              shell: bash
+              if: ${{ env.super_secret != '' }}
+            - name: Check out repository
+              uses: actions/checkout@v3
+              with:
+                args: The ${{ github.event_name }} event triggered this step.
+                path: ./.github/actions/my-private-repo
+                ref: v1.0
+                repository: octocat/my-private-repo
+                token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+            - name: Use local my-action
+              uses: ./.github/actions/my-action

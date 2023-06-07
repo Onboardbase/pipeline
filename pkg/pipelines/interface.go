@@ -1,8 +1,6 @@
 package pipelines
 
-type Pipeline interface {
-	ParseInputFile(file string)
-	GetSchema() string
+type PipelineConfig interface {
+	// ParseInputFile(file string)
+	GenerateSchema() []interface{}
 }
-
-type Schema interface{}
